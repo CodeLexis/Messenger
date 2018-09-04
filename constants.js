@@ -4,5 +4,6 @@ module.exports = {
   colors: {
     appBarBackgroundColor: '#c03fdd',
     appBarForegroundColor: '#ffffff'
-  }
+  },
+  pageLimit: 20
 };

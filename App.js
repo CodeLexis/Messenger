@@ -1,10 +1,11 @@
 import React from 'react';
 import { createDrawerNavigator, NavigationActions } from 'react-navigation';
 import { AppNavigator } from './screens';
-import { AsyncStorage, Button, DrawerItems, FlatList, Text } from "react-native";
-import { Ionicons } from "react-native-vector-icons";
+import { Button, FlatList } from "react-native";
+import { Icons } from "react-native-vector-icons/Ionicons";
 import { retrieveProfiles } from './utils';
 import { chars } from './utils';
+import { LoadingIndicator } from './components';
 
 // const CustomDrawerContentComponent = (props) => (
 //   <View>
@@ -14,7 +15,7 @@ import { chars } from './utils';
 
 class CustomDrawerButton extends React.Component {
   navigateToScreen(screenIndex, params) {
-    let route = chars[screenIndex].toLowerCase();
+    let route = chars[screenIndex];
 
     const navigateAction = NavigationActions.navigate({
       routeName: route,
@@ -40,48 +41,19 @@ class CustomDrawerContentComponent extends React.Component {
   };
 
   componentDidMount() {
-    let userProfiles = [
-      {'name': 'Church', 'uid': '810ab3dac'},
-      {'name': 'Family', 'uid': '90129abae'},
-      {'name': 'School', 'uid': '420aba392'}
-    ];
-
-    this.setState(
-      {
-        isDisplayed: true,
-        profiles: userProfiles
-      }
-    );
-    
-    // retrieveProfiles(
-    //   page=1, perPage=20, userUid='9uTP32RsfxP8zDSgrurwRE'
-    // ).then(
-    //   function(result) {
-    //     let userProfiles = JSON.parse(result.your_response);
-    //     let userProfiles = [
-    //       {'name': 'Church', 'uid': '810ab3dac'},
-    //       {'name': 'Family', 'uid': '90129abae'},
-    //       {'name': 'School', 'uid': '420aba392'}
-    //     ];
-
-    //     this.setState(
-    //       {
-    //         isDisplayed: true,
-    //         profiles: userProfiles
-    //       }
-    //     );
-    //   }.bind(this),
-
-    //   function(error) {
-    //     console.log('Error', error);
-    //   }
-    // )
+    retrieveProfiles(
+      page=1, perPage=20, userUid='9uTP32RsfxP8zDSgrurwRE'
+    ).then(
+      function(result) {
+        this.setState({isDisplayed: true, profiles: result})
+      }.bind(this)
+    )
   }
 
   render() {
     if (this.state.isDisplayed) {
       return (
-        <FlatList data={this.state.profiles} renderItem={
+        <FlatList data={this.state.profiles} keyExtractor={(item, index) => item.uid} renderItem={
           ({item}) => <CustomDrawerButton item={item}
             screenIndex={this.state.profiles.indexOf(item)}
             navigation={this.props.navigation}/>
@@ -89,28 +61,28 @@ class CustomDrawerContentComponent extends React.Component {
       )
     }
 
-    return <Text>Loading...</Text>
+    return <LoadingIndicator/>
   }
 }
 
 export default drawerNavigator = createDrawerNavigator(
   {
-    'a': {
+    'A': {
       screen: AppNavigator
     },
-    'b': {
+    'B': {
       screen: AppNavigator
     },
-    'c': {
+    'C': {
       screen: AppNavigator
     },
-    'd': {
+    'D': {
       screen: AppNavigator
     },
-    'e': {
+    'E': {
       screen: AppNavigator
     },
-    'f': {
+    'F': {
       screen: AppNavigator
     }
   },

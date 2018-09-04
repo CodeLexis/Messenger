@@ -1,5 +1,5 @@
 import { AsyncStorage } from 'react-native';
-import { getProfiles, getProfileConversations } from "./apiWrapper";
+import { getProfiles, getProfileConversations, getUser } from "./apiWrapper";
 
 export function handleError(error) {
   console.log('ERROR', error);
@@ -7,7 +7,7 @@ export function handleError(error) {
 
 export async function storeData(key, value) {
   try {
-    await AsyncStorage.setItem(key, value);
+    AsyncStorage.setItem(key, value);
   } catch (error) {
     // Error saving data
   }
@@ -57,61 +57,74 @@ export const Base64 = {
   }
 };
 
-export async function retrieveProfileConversations(page, perPage, profileUid_) {
-  AsyncStorage.getItem(profileUid_).then(
-    function(result) {
-      let cachedProfileConversations = result.conversations;
+export async function retrieveProfileConversations(page, perPage, userUid, profileUid) {
+  cachedProfiles = await AsyncStorage.getItem('profiles');
 
-      if (!cachedProfileConversations) {
-        let profileConversations = getProfileConversations(
-          page=1, perPage=15, profileUid=profileUid_).your_response;
+  cachedProfiles = JSON.parse(cachedProfiles);
 
-        AsyncStorage.getItem(profileUid_).then(
-          function(result) {
-            if (!result) {
-              result = {}
-            }
+  let cachedProfile, cachedProfileIndex;
 
-            result['conversations'] = conversations
-            AsyncStorage.setItem(profileUid_, result)
-          }
-        );
-
-        return profileConversations;
+  // FIX THIS!!!!
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (profile.uid === profileUid) {
+        cachedProfile = profile;
+        cachedProfileIndex = index;
       }
-
-      return cachedProfileConversations
-    },
-
-    function(error) {
-      handleError(error);
     }
   );
+
+  cachedProfileConversations = cachedProfile.conversations;
+
+  if (!cachedProfileConversations) {
+    let { phone, password } = await retrieveUser(userUid);
+
+    profiles = await getProfiles(phone, password, page, perPage, userUid);
+
+    profileConversations = await getProfileConversations(
+      phone, password, page, perPage, userUid, profileUid);
+
+    cachedProfiles[cachedProfileIndex].conversations = profileConversations.your_response;
+
+    AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
+    
+    return profileConversations.your_response;
+  }
+
+  return cachedProfileConversations
+}
+
+export async function retrieveConversationMessages(
+    page, perPage, profileUid, conversationUid) {
+
+}
+
+export async function retrieveUser(userUid) {
+  cached = await AsyncStorage.getItem('user');
+
+  if (!cached) {
+    user = await getUser(userUid);
+
+    await AsyncStorage.setItem('user', JSON.stringify(user.your_response));
+
+    return JSON.parse(user.your_response);
+  }
+
+  return JSON.parse(cached);
 }
 
 export async function retrieveProfiles(page, perPage, userUid) {
-  return AsyncStorage.getItem(userUid).then(
-    function(result) {
+  cached = await AsyncStorage.getItem('profiles');
 
-      let cachedUserProfiles = result.profiles;
+  if (!cached) {
+    let { phone, password } = await retrieveUser(userUid);
 
-      if (!cachedUserProfiles) {
-        getProfiles(page, perPage, userUid).then(
-          function(result) {
-            result['profiles'] = profiles;
+    userProfiles = await getProfiles(phone, password, page, perPage, userUid);
 
-            AsyncStorage.setItem(userUid, result);
-          }
-        );
+    await AsyncStorage.setItem('profiles', JSON.stringify(userProfiles.your_response));
 
-        return retrieveProfiles(page, perPage, userUid);
-      }
+    return userProfiles.your_response;
+  }
 
-      return cachedUserProfiles;
-    },
-
-    function(error) {
-      handleError(error);
-    }
-  );
+  return JSON.parse(cached);
 }

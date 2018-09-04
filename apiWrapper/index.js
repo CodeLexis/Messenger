@@ -110,11 +110,8 @@ export async function createProfile(
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'api-key': apiKey
-        },
-        authentication: {
-          'username': phone,
-          'password': password
+          'api-key': apiKey,
+          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
         },
         body: JSON.stringify({
           "name": name,
@@ -133,10 +130,14 @@ export async function createProfile(
   }
 }
 
-export async function getProfiles(page, perPage, userUid) {
+export async function getProfiles(phone, password, page, perPage, userUid) {
 
-  let phone = await AsyncStorage.getItem('phone');
-  let password = await AsyncStorage.getItem('password');
+  // userProfile = await AsyncStorage.getItem(userUid);
+
+  // userProfile = JSON.parse(userProfile);
+
+  // let phone = userProfile['phone'];
+  // let password = userProfile['password'];
 
   try {
       let response = await fetch(
@@ -164,11 +165,7 @@ export async function getProfiles(page, perPage, userUid) {
     }
 }
 
-export async function getProfileConversations(
-    page, perPage, profileUid) {
-
-  let phone = await AsyncStorage.getItem('phone');
-  let password = await AsyncStorage.getItem('password');
+export async function getProfileConversations(phone, password, page, perPage, userUid, profileUid) {
 
   try {
     let response = await fetch(
@@ -177,15 +174,44 @@ export async function getProfileConversations(
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'api-key': apiKey
-        },
-        authentication: {
-          'username': phone,
-          'password': password
+          'api-key': apiKey,
+          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
         },
         params: {
           'page': page,
           'per_page': perPage
+        }
+      });
+
+    return response.json();
+  }
+
+  catch (error) {
+    console.log(error);
+  }
+}
+
+export async function addContactToProfile(
+    profileUid, inviteCode=null, fullname=null, phone=null, fromScan=false) {
+  try {
+
+    let phone = await AsyncStorage.getItem('phone');
+    let password = await AsyncStorage.getItem('password');
+
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}/contacts`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
+        },
+        body: {
+          'invite_code': inviteCode,
+          'fullname': fullname,
+          'from_scan': fromScan,
+          'phone': phone
         }
       });
 
@@ -211,11 +237,8 @@ export async function sendMessage(
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'api-key': apiKey
-        },
-        authentication: {
-          'username': phone,
-          'password': password
+          'api-key': apiKey,
+          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
         },
         body: {
           'text': text,

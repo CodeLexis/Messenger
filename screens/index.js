@@ -1,11 +1,9 @@
-import { Ionicons } from 'react-native-vector-icons';
 import React from 'react';
-import { Button, DrawerItems, Image, View } from 'react-native';
 import { createStackNavigator } from 'react-navigation';
-import { appIcon, appName, colors } from '../constants';
+import { colors } from '../constants';
 import { HomeNavigator } from './home';
 import { ChatScreen } from './chat';
-import { handleError, storeData } from '../utils';
+import { storeData } from '../utils';
 
 const AppNavigator_ = createStackNavigator(
   {
@@ -45,12 +43,11 @@ export class AppNavigator extends React.Component {
   }
 
   render() {
-
     const { navigation } = this.props;
 
     let profileName = navigation.state.key;
 
-    storeData('active_profile', profileName);
+    storeData('active_profile_index', profileName);
 
     return <AppNavigator_ navigation={navigation} />;
   }

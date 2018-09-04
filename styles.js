@@ -67,6 +67,13 @@ module.exports = StyleSheet.create({
     padding: 5,
     height: '10%'
   },
+  noContentContainer: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center'
+  },
   postActionBar: {
     flexDirection:'row',
     flexWrap:'wrap',
