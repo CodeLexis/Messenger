@@ -1,32 +1,57 @@
 import React from "react";
 import { AsyncStorage, Text, View } from "react-native";
-import { LoadingIndicator, NoContentContainer } from "../../components";
+import { ConversationStrip, LoadingIndicator, NoContentContainer } from "../../components";
 import { chars } from "../../utils";
+import { retrieveProfileMoments } from '../../apiWrapper';
+import { colors, pageLimit } from '../../constants';
+import ActionButton from 'react-native-action-button';
+import timer from 'react-native-timer';
 
 const styles = require('../../styles.js');
 
 export class MomentsScreen extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {isMounted: false, page: 1};
+  }
 
-    this.state = {isMounted: false};
+  displayProfileMoments(refresh=true) {
+    AsyncStorage.multiGet(['profiles', 'active_profile_index'], (errs, result) => {
+
+      if (!errs) {
+        profiles = JSON.parse(result[0][1]);
+        activeProfileIndex = result[1][1];
+
+        profileIndex = chars.indexOf(activeProfileIndex);
+        profile = profiles[profileIndex];
+
+        retrieveProfileMoments(
+          page=this.state.page, perPage=pageLimit, cachedProfileIndex=profileIndex, refresh=refresh
+        ).then(
+            function(result) {
+              this.setState(
+                {
+                  profile: profile,
+                  moments: result, 
+                  isMounted: true,
+                  page: this.state.page
+                }
+              );
+            }.bind(this)
+          )
+      }
+    })
   }
 
   componentDidMount() {
-    AsyncStorage.multiGet(['active_profile_index', 'profiles'], (errs, result) => {
-      if (!errs) {
-        if (result !== null) {
-          activeProfileIndex = result[0][1];
-          profiles = JSON.parse(result[1][1]);
+    timer.clearInterval('displayProfileMoments');
+    this.displayProfileMoments(refresh=false);
 
-          profileIndex = chars.indexOf(activeProfileIndex);
+    timer.setInterval('displayProfileMoments', () => this.displayProfileMoments.bind(this), 1000);
+  }
 
-          profile = profiles[profileIndex]
-
-          this.setState({profile: profile, isMounted: true});
-        }
-      }
-    })
+  componentWillUnmount() {
+    timer.clearInterval('displayProfileMoments');
   }
 
   render() {
@@ -36,6 +61,30 @@ export class MomentsScreen extends React.Component {
       return <LoadingIndicator/>
     }
 
-    return <NoContentContainer text={`Moments from ${ this.state.profile.name } appear here!`}/>
+    if(this.state.moments.length == 0) {
+      widget = <NoContentContainer text={`There are no moments in ${this.state.profile.name}!`}/>
+    }
+
+    else {
+      widget = <FlatList data={this.state.moments} keyExtractor={(item, index) => item.uid} renderItem={
+        ({item}) => <ConversationStrip conversation={item} navigation={this.props.navigation}/>
+        }/>
+    }
+
+    addButton = null
+
+    if(this.state.profile.allows_edit) {
+      addButton = <ActionButton buttonColor={this.state.profile.theme_color} onPress={() => console.log('Adding')}>
+        </ActionButton>
+    }
+
+    return (
+      <View style={styles.container}>
+        
+        {widget}
+        {addButton}
+
+      </View>
+    )
   }
 }

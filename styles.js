@@ -1,7 +1,7 @@
 'use strict';
 
 var React = require('react-native');
-
+var { colors } = require('./constants');
 var { StyleSheet } = React;
 
 module.exports = StyleSheet.create({
@@ -16,8 +16,18 @@ module.exports = StyleSheet.create({
     height: 100,
     width: 100,
   },
+  button: {
+    width: '100%',
+    padding: 10
+  },
   container: {
     flex: 1
+  },
+  contactPhoto: {
+    width: 45, 
+    height: 45, 
+    margin: 5, 
+    borderRadius: 32.5
   },
   contactStrip: {
     flexDirection:'row',
@@ -25,6 +35,7 @@ module.exports = StyleSheet.create({
   },
   conversationStrip: {
     alignItems: 'center',
+    alignContent: 'space-between',
     backgroundColor: '#ffffff',
     flexDirection:'row',
     flexWrap:'wrap',
@@ -34,11 +45,17 @@ module.exports = StyleSheet.create({
   contactName: {
     fontWeight: 'bold'
   },
-  conversationStripMessage: {
+  conversationStripReadMessage: {
     color: '#a0a0a0'
   },
+  conversationStripUnreadMessage: {
+    color: '#000000',
+    fontWeight: 'bold'
+  },
   conversationStripTime: {
-    color: '#a0a0a0'
+    color: '#a0a0a0',
+    textAlign: 'right',
+    marginLeft: 5
   },
   icon: {
     marginTop: 10,
@@ -50,6 +67,13 @@ module.exports = StyleSheet.create({
     width: 100,
     height: 100
   },
+  label: {
+    color: colors.darkGrey
+  },
+  loadingButton: {
+    padding: 50,
+    backgroundColor: 'transparent'
+  },
   list: {
     // alignItems: 'center',
     flex: 1,
@@ -58,7 +82,7 @@ module.exports = StyleSheet.create({
   messageInput: {
     backgroundColor: '#ffffff',
     borderRadius: 5,
-    width: '90%'
+    padding: 10
   },
   messageInputContainer: {
     alignItems: 'center',
@@ -73,6 +97,13 @@ module.exports = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center'
+  },
+  form: {
+    padding: '5%',
+    justifyContent: 'space-between'
+  },
+  formDiv: {
+    justifyContent: 'space-between',
   },
   postActionBar: {
     flexDirection:'row',
@@ -100,8 +131,13 @@ module.exports = StyleSheet.create({
     flex: 1,
     backgroundColor: '#2020'
   },
+  sectionHeading: {
+    color: colors.darkGrey,
+    fontWeight: 'bold',
+    margin: 5
+  },
   sentMessageBubble: {
-    backgroundColor: '#aa019a',
+    backgroundColor: colors.appBarBackgroundColor,
     borderRadius: 5,
     padding: 8,
     margin: 5,
@@ -113,6 +149,18 @@ module.exports = StyleSheet.create({
   staticScroll: {
     flex: 2,
     backgroundColor: '#ff0'
+  },
+  subText: {
+    fontSize: 12,
+    color: colors.darkGrey
+  },
+  textInput: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderRadius: 5,
+    borderColor: '#d0d0d0',
+    backgroundColor: 'transparent',
+    padding: 10
   },
   timelinePost: {
     flex: 1,
@@ -140,6 +188,10 @@ module.exports = StyleSheet.create({
   //   top: 4,
   //   color: '#404040'
   // },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 24
+  },
   username: {
     fontWeight: 'bold',
     alignSelf: 'center',

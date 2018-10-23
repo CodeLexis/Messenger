@@ -1,257 +1,404 @@
-import { Base64 } from "../utils";
 import { AsyncStorage } from 'react-native';
+import { pageLimit } from '../constants';
+import { addUserToProfile, createProfile, createProfileConversation, 
+  getContactConversations, getConversationMessages, getNotifications, 
+  getProfiles, getProfileContacts, getProfileConversations, getUser, 
+  getUserByEmailOrPhone, login, sendTextMessage, updateContactDetails } from './wrapper';
 
-apiUrl = 'https://messenger-t10.herokuapp.com/api/v1.0';
-apiKey = '12345678';
 
-user_1_uid = 'SYWbT3vkmeY6e4bGbx9zvS';
-user_2_uid = 'Yd7sD8oYNLvSREMrikJrmU';
+export async function getCachedProfileForIndex(profileIndex) {
+  result = JSON.parse(await AsyncStorage.getItem('profiles'));
 
+  let cachedProfile;
 
-export async function createUser(email, fullname) {
-  try {
+  result.forEach(
+    (profile, index) => {
+      if (index === profileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
 
-    let phone = await AsyncStorage.getItem('phone');
-    let password = await AsyncStorage.getItem('password');
-
-    let response = await fetch(
-      `${apiUrl}/users`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey
-        },
-        body: JSON.stringify({
-          "email": email,
-          "name": fullname,
-          "password": password,
-          "phone": phone
-        })
-      });
-
-    return response.json();
-  }
-
-  catch (error) {
-    console.log(error);
-  }
+  return cachedProfile
 }
 
-export async function editUser(newParams) {
-  try {
 
-    let phone = await AsyncStorage.getItem('phone');
-    let password = await AsyncStorage.getItem('password');
+export async function retrieveProfileConversations(page, perPage, cachedProfileIndex, refresh=false) {
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
 
-    let response = await fetch(
-      `${apiUrl}/users`, {
-        method: 'PATCH',
-        authentication: {
-          'username': phone,
-          'password': password
-        },
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey
-        },
-        body: JSON.stringify(newParams)
-      });
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
 
-    return response.json();
+  let cachedProfile;
+
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
+
+  cachedProfileConversations = cachedProfile.conversations;
+  userUid = user.uid;
+  profileUid = cachedProfile.uid;
+
+  if (!cachedProfileConversations || refresh) {
+    authToken = await retrieveAuthToken();
+
+    profileConversations = await getProfileConversations(authToken, page, perPage, userUid, profileUid);
+
+    cachedProfiles[cachedProfileIndex].conversations = profileConversations.your_response;
+
+    AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
+    
+    return profileConversations.your_response;
   }
 
-  catch (error) {
-    console.log(error);
-  }
+  return cachedProfileConversations
 }
 
-export async function getUser(userUid) {
-  try {
+  
+export async function retrieveConversationMessages(
+    page, perPage, cachedProfileIndex, conversationUid, refresh=false) {
 
-    let phone = await AsyncStorage.getItem('phone');
-    let password = await AsyncStorage.getItem('password');
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
 
-    let response = await fetch(
-      `${apiUrl}/users/${userUid}`, {
-        method: 'GET',
-        authentication: {
-          'username': phone,
-          'password': password
-        },
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey
-        }
-      });
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
 
-    return response.json();
+  let cachedProfile;
+
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
+
+  cachedProfileConversations = cachedProfile.conversations;
+  userUid = user.uid;
+  profileUid = cachedProfile.uid;
+
+  let cachedConversation;
+  cachedProfileConversations.forEach(
+    (conversation, index) => {
+      if (conversation.uid === conversationUid) {
+        cachedConversation = conversation
+      }
+    }
+  );
+
+  if (refresh) {
+    authToken = await retrieveAuthToken();
+
+    messages = await getConversationMessages(authToken, page, perPage, userUid, profileUid, conversationUid);
+
+    // await AsyncStorage.setItem('user', JSON.stringify(user.your_response));
+
+    return messages.your_response;
   }
 
-  catch (error) {
-    console.log(error);
-  }
+  return cachedConversation.messages;
 }
 
-export async function createProfile(
-    userUid, name, description, inviteCode, privacyLevel,
-    themeColor
-) {
 
-  let phone = await AsyncStorage.getItem('phone');
-  let password = await AsyncStorage.getItem('password');
+export async function retrieveUser(userUid, refresh=false) {
+  cached = await AsyncStorage.getItem('user');
 
-  try {
-    let response = await fetch(
-      `${apiUrl}/users/${userUid}/profiles`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey,
-          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
-        },
-        body: JSON.stringify({
-          "name": name,
-          "description": description,
-          "invite_code": inviteCode,
-          "privacy_level": privacyLevel,
-          "theme_color": themeColor
-        })
-      });
+  if (!cached || refresh) {
+    authToken = await retrieveAuthToken();
 
-    return response.json();
+    user = await getUser(authToken, userUid);
+
+    await AsyncStorage.setItem('user', JSON.stringify(user.your_response));
+
+    return user.your_response;
   }
 
-  catch (error) {
-    console.log(error);
-  }
+  return JSON.parse(cached);
 }
 
-export async function getProfiles(phone, password, page, perPage, userUid) {
 
-  // userProfile = await AsyncStorage.getItem(userUid);
+export async function retrieveProfiles(page=1, perPage=pageLimit, refresh=false) {
 
-  // userProfile = JSON.parse(userProfile);
+  cached = await AsyncStorage.getItem('profiles');
 
-  // let phone = userProfile['phone'];
-  // let password = userProfile['password'];
+  if (!cached || refresh) {
+    authToken = await retrieveAuthToken();
 
-  try {
-      let response = await fetch(
-        `${apiUrl}/users/${userUid}/profiles`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'api-key': apiKey,
-            'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
-          },
-          params: {
-            'page': page,
-            'per_page': perPage
-          }
-        });
+    user = JSON.parse(await AsyncStorage.getItem('user'));
 
-      let responseJson = response.json();
+    userProfiles = await getProfiles(authToken, page, perPage, user.uid);
 
-      return responseJson;
+    await AsyncStorage.setItem('profiles', JSON.stringify(userProfiles.your_response));
+
+    return userProfiles.your_response;
+  }
+
+  return JSON.parse(cached);
+}
+
+
+export async function retrieveAuthToken() {
+  result = await AsyncStorage.multiGet(['auth_token', 'auth_token_expiry']);
+
+  cached = result[0][1];
+  cachedExpiryDate = result[1][1];
+
+  let hasCachedExpired = true;
+
+  if (cachedExpiryDate) {
+    var expiryDateTime = new Date(cachedExpiryDate);
+    var currentDateTime = new Date();
+
+    hasCachedExpired = currentDateTime > expiryDateTime;
+  }
+
+  if (!cached || hasCachedExpired) {
+    result = await AsyncStorage.multiGet(['email_or_phone', 'password']);
+
+    emailOrPhone = result[0][1]
+    password = result[1][1]
+
+    authTokenResponse = await login(emailOrPhone, password);
+
+    if (!authTokenResponse) {
+      throw TypeError()
     }
 
-    catch (error) {
-      console.log(error);
+    AsyncStorage.multiSet(
+      [['auth_token', authTokenResponse.your_response.token], 
+      ['auth_token_expiry', authTokenResponse.your_response.expires_on]]
+    );
+
+    return authTokenResponse.your_response.token;
+  }
+
+  return cached;
+}
+
+
+export async function retrieveUserByEmailOrPhone(emailOrPhone, refresh=false) {
+  cached = await AsyncStorage.getItem('user');
+
+  if (!cached || refresh) {
+    authToken = await retrieveAuthToken();
+
+    userDetails = await getUserByEmailOrPhone(authToken, emailOrPhone);
+ 
+    console.log('USER DETAILS', userDetails);
+
+    await AsyncStorage.setItem('user', JSON.stringify(userDetails.your_response));
+
+    return userDetails.your_response;
+  }
+
+  return cached;
+}
+
+
+export async function doAddUserToProfile(profileUid, inviteCode, fullname, phone, fromScan) {
+  cached = await AsyncStorage.getItem('user');
+
+  if (!cached || refresh) {
+    authToken = await retrieveAuthToken();
+
+    response = await addUserToProfile(
+      authToken, profileUid, inviteCode, fullname, phone, fromScan);
+
+    return response.your_response;
+  }
+
+  return cached;
+}
+
+
+export async function callCreateProfile(name, description, inviteCode, themeColor, alertPreference) {
+  user = await AsyncStorage.getItem('user');
+  user_json = JSON.parse(user);
+
+  authToken = await retrieveAuthToken();
+
+  newProfile = await createProfile(authToken, user_json.uid, name, description, inviteCode, themeColor, alertPreference);
+
+  if (profile['code'] > 299) {
+    throw TypeError
+  }
+
+  // await AsyncStorage.setItem('user', JSON.stringify(userDetails.your_response));
+
+  return newProfile.your_response;
+}
+
+
+export async function retrieveNotifications(page=1, perPage=pageLimit, refresh=false) {
+  cached = await AsyncStorage.getItem('notifications');
+
+  if (!cached || refresh) {
+    authToken = await retrieveAuthToken();
+    user = await AsyncStorage.getItem('user');
+    user_json = JSON.parse(user);
+
+    notifications = await getNotifications(authToken, user_json.uid, page, perPage);
+
+    await AsyncStorage.setItem('notifications', JSON.stringify(notifications.your_response));
+
+    return notifications.your_response;
+  }
+
+  return JSON.parse(cached);
+}
+
+
+export async function retrieveProfileMoments(page, perPage, cachedProfileIndex, refresh) {
+  return []
+}
+
+export async function retrieveContactConversations(page, perPage, cachedProfileIndex, contactUid, refresh) {
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
+
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
+
+  var cachedProfile;
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
     }
+  );
+
+  var cachedContact, indexOfCachedContact;
+  cachedProfileContacts = cachedProfile.contacts;
+  cachedProfileContacts.forEach(
+    (contact, index) => {
+      if (contact.uid === contactUid) {
+        cachedContact = contact
+        indexOfCachedContact = index
+      }
+    }
+  );
+
+  userUid = user.uid;
+  profileUid = cachedProfile.uid;
+  contactUid = cachedContact.uid || contactUid;
+  cachedContactConversations = cachedContact.conversations;
+
+  if (!cachedContact || refresh) {
+    authToken = await retrieveAuthToken();
+
+    contactConversations = await getContactConversations(authToken, page, perPage, userUid, profileUid, contactUid);
+
+    cachedProfiles[cachedProfileIndex].contacts[indexOfCachedContact].conversations = contactConversations.your_response;
+
+    // AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
+    
+    return contactConversations.your_response;
+  }
+
+  return cachedContactConversations
 }
 
-export async function getProfileConversations(phone, password, page, perPage, userUid, profileUid) {
 
-  try {
-    let response = await fetch(
-      `${apiUrl}/users/${userUid}/profiles/${profileUid}/conversations`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey,
-          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
-        },
-        params: {
-          'page': page,
-          'per_page': perPage
-        }
-      });
+export async function retrieveProfileContacts(page, perPage, cachedProfileIndex, refresh=false) {
+  // cachedProfile = await getCachedProfileForIndex(cachedProfileIndex)
+  // user = JSON.parse(await AsyncStorage.getItem('user'))
 
-    return response.json();
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
+
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
+
+  let cachedProfile;
+
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
+
+  cachedProfileContacts = cachedProfile.contacts;
+  userUid = user.uid;
+  profileUid = cachedProfile.uid;
+
+  if (!cachedProfileContacts || refresh) {
+    authToken = await retrieveAuthToken();
+
+    profileContacts = await getProfileContacts(authToken, page, perPage, userUid, profileUid);
+
+    cachedProfiles[cachedProfileIndex].contacts = profileContacts.your_response;
+
+    AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
+    
+    return profileContacts.your_response;
   }
 
-  catch (error) {
-    console.log(error);
-  }
+  return cachedProfileContacts
 }
 
-export async function addContactToProfile(
-    profileUid, inviteCode=null, fullname=null, phone=null, fromScan=false) {
-  try {
 
-    let phone = await AsyncStorage.getItem('phone');
-    let password = await AsyncStorage.getItem('password');
+export async function doCreateProfileConversation(cachedProfileIndex, title=null, category, participants) {
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
 
-    let response = await fetch(
-      `${apiUrl}/users/${userUid}/profiles/${profileUid}/contacts`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey,
-          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
-        },
-        body: {
-          'invite_code': inviteCode,
-          'fullname': fullname,
-          'from_scan': fromScan,
-          'phone': phone
-        }
-      });
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
 
-    return response.json();
-  }
+  let cachedProfile;
 
-  catch (error) {
-    console.log(error);
-  }
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  )
+
+  authToken = await retrieveAuthToken()
+
+  conversation = await createProfileConversation(authToken, user.uid, cachedProfile.uid, title, category, participants)
+
+  return conversation.your_response;
 }
 
-export async function sendMessage(
-    profileUid, conversationUid, text, audio, image, video) {
 
-  try {
+export async function doSendTextMessage(cachedProfileIndex, conversationUid, text) {
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
 
-    let phone = await AsyncStorage.getItem('phone');
-    let password = await AsyncStorage.getItem('password');
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
 
-    let response = await fetch(
-      `${apiUrl}/users/${userUid}/profiles/${profileUid}/conversations/${conversationUid}/messages`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey,
-          'Authorization': 'Basic ' + Base64.btoa(phone + ':' + password)
-        },
-        body: {
-          'text': text,
-          'audio': audio,
-          'image': image,
-          'video': video
-        }
-      });
+  let cachedProfile;
 
-    return response.json();
-  }
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
 
-  catch (error) {
-    console.log(error);
-  }
+  authToken = await retrieveAuthToken();
+
+  messageResponse = await sendTextMessage(authToken, user.uid, cachedProfile.uid, conversationUid, text)
+
+  return messageResponse.your_response;
+}
+
+
+export async function doUpdateContactDetails(profileUid, contactUid, payload) {
+  authToken = await retrieveAuthToken();
+
+  result = await AsyncStorage.getItem('user');
+  user = JSON.parse(result);
+
+  contactDetails = await updateContactDetails(authToken, user.uid, profileUid, contactUid, payload);
+
+  console.log(contactDetails.your_response)
+  
+  return contactDetails.your_response;
 }

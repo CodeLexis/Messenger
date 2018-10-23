@@ -1,12 +1,14 @@
 import React from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { AsyncStorage, FlatList, View } from 'react-native';
+import { AsyncStorage, FlatList, Modal, Text, View } from 'react-native';
 import ActionButton from 'react-native-action-button';
 import timer from 'react-native-timer';
 
-import { ConversationStrip, LoadingIndicator, NoContentContainer } from '../../components';
-import { pageLimit } from '../../constants';
-import { chars, retrieveProfileConversations } from "../../utils";
+import { ContactHead, ConversationStrip, LoadingIndicator, NoContentContainer } from '../../components';
+import { colors, pageLimit } from '../../constants';
+import { chars } from "../../utils";
+import { retrieveProfileConversations, retrieveProfileContacts, 
+  retrieveProfiles, retrieveUser } from "../../apiWrapper";
 
 var styles = require('../../styles.js');
 
@@ -130,32 +132,29 @@ let conversations = {
 export class ConversationsScreen extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {isMounted: false, page: 1};
+    this.state = {isMounted: false, conversationsPage: 1, contactsPage: 1};
   }
 
-  displayProfileConversations() {
+  displayProfileConversations(refresh=true) {
+    AsyncStorage.multiGet(['profiles', 'active_profile_index'], (errs, result) => {
 
-    AsyncStorage.multiGet(['active_profile_index', 'user', 'profiles'], (errs, result) => {
       if (!errs) {
-        activeProfileIndex = result[0][1];
-        user = JSON.parse(result[1][1]);
-        profiles = JSON.parse(result[2][1]);
+        profiles = JSON.parse(result[0][1]);
+        activeProfileIndexAlphabet = result[1][1];
 
-        profileIndex = chars.indexOf(activeProfileIndex);
-
-        profile = profiles[profileIndex]
-
-        console.log(`Displaying profile ${ profile.name } conversations`)
+        profileIndex = chars.indexOf(activeProfileIndexAlphabet);
+        profile = profiles[profileIndex];
 
         retrieveProfileConversations(
-          page=this.state.page, perPage=pageLimit, userUid=user.uid, profile.uid
+          page=this.state.conversationsPage, perPage=pageLimit, cachedProfileIndex=profileIndex, refresh=refresh
         ).then(
             function(result) {
               this.setState(
                 {
                   profile: profile,
                   conversations: result, 
-                  isMounted: true
+                  isMounted: true,
+                  conversationsPage: this.state.conversationsPage
                 }
               );
             }.bind(this)
@@ -164,17 +163,55 @@ export class ConversationsScreen extends React.Component {
     })
   }
 
+  displayProfileContacts(refresh=true) {
+    AsyncStorage.multiGet(['profiles', 'active_profile_index'], (errs, result) => {
+
+      if (!errs) {
+        profiles = JSON.parse(result[0][1]);
+        activeProfileIndexAlphabet = result[1][1];
+
+        profileIndex = chars.indexOf(activeProfileIndexAlphabet);
+        profile = profiles[profileIndex];
+
+        retrieveProfileContacts(
+          page=this.state.contactsPage, perPage=pageLimit, cachedProfileIndex=profileIndex, refresh=refresh
+        ).then(
+            function(result) {
+
+              this.setState(
+                {
+                  profile: profile,
+                  contacts: result, 
+                  isMounted: true,
+                  contactsPage: this.state.contactsPage
+                }
+              );
+            }.bind(this)
+        )
+      }
+    })
+  }
+
   componentDidMount() {
     timer.clearInterval('displayProfileConversations');
+    timer.clearInterval('displayProfileContacts');
 
-    timer.setInterval('displayProfileConversations', this.displayProfileConversations.bind(this), 1000);
+    this.displayProfileConversations(refresh=false);
+    this.displayProfileContacts(refresh=false);
+
+    timer.setInterval(
+      'displayProfileConversations', this.displayProfileConversations.bind(this), 1000);
+    timer.setInterval(
+      'displayProfileContacts', this.displayProfileContacts.bind(this), 1500);
   }
 
   componentWillUnmount() {
     timer.clearInterval('displayProfileConversations');
+    timer.clearInterval('displayProfileContacts');
   }
 
   render() {
+    let { navigate } = this.props.navigation;
     let { isMounted } = this.state;
 
     if (!isMounted) {
@@ -184,27 +221,51 @@ export class ConversationsScreen extends React.Component {
     }
 
     if(this.state.conversations.length == 0) {
-      widget = <NoContentContainer text={`There are no conversations in ${this.state.profile.name}!`}/>
+      widget = <View flex={1}>
+          <Text style={styles.sectionHeading}>Conversations</Text>
+          <NoContentContainer text={`There are no conversations in ${this.state.profile.name}!`}/>
+        </View>
     }
 
     else {
-      widget = <FlatList data={this.state.conversations} keyExtractor={(item, index) => item.uid} renderItem={
-        ({item}) => <ConversationStrip conversation={item} navigation={this.props.navigation}/>
-        }/>
+      widget = <View flex={1}>
+        <Text style={styles.sectionHeading}>Conversations</Text>
+        <FlatList data={this.state.conversations} keyExtractor={(item, index) => item.uid} renderItem={
+          ({item}) => <ConversationStrip conversation={item} navigation={this.props.navigation}/>
+          }/>
+      </View>
+    }
+
+    addButton = null
+
+    if (this.state.profile.allows_edit) {
+      addButton = <ActionButton buttonColor={this.state.profile.theme_color}>
+        
+          <ActionButton.Item buttonColor='#9b59b6' title="From Contacts" onPress={() => console.log("notes tapped!")}>
+            <Icon size={22} name="md-contacts" style={styles.actionButtonIcon} />
+          </ActionButton.Item> 
+
+          <ActionButton.Item buttonColor='#3498db' title="Name" onPress={() => navigate('AddUser')}>
+            <Icon size={22} name="ios-barcode" style={styles.actionButtonIcon} />
+          </ActionButton.Item>
+        
+        </ActionButton>
     }
 
     return (
       <View style={styles.container}>
-        {widget}
-        <ActionButton buttonColor={this.state.profile.theme_color}>
-          <ActionButton.Item buttonColor='#9b59b6' title="From Contacts" onPress={() => console.log("notes tapped!")}>
-            <Icon size={22} name="md-contacts" style={styles.actionButtonIcon} />
-          </ActionButton.Item>
+        <View style={{backgroundColor: colors.grey}} flex={.3}>
+          <Text style={styles.sectionHeading}>Contacts</Text>
+          <FlatList horizontal data={this.state.contacts} keyExtractor={(item, index) => item.uid}
+            renderItem={
+              ({item}) => <ContactHead contact={item} navigation={this.props.navigation}/>
+            }/>
+        </View>
 
-          <ActionButton.Item buttonColor='#3498db' title="Invite Code" onPress={() => {}}>
-            <Icon size={22} name="ios-barcode" style={styles.actionButtonIcon} />
-          </ActionButton.Item>
-        </ActionButton>
+        {widget}
+        
+        {addButton}
+
       </View>
     )
   }

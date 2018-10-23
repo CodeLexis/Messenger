@@ -1,9 +1,12 @@
 import { AsyncStorage } from 'react-native';
-import { getProfiles, getProfileConversations, getUser } from "./apiWrapper";
+import { retrieveAuthToken, retrieveProfiles, retrieveUserByEmailOrPhone } from './apiWrapper';
+import { pageLimit } from './constants';
+
 
 export function handleError(error) {
   console.log('ERROR', error);
 }
+
 
 export async function storeData(key, value) {
   try {
@@ -13,8 +16,10 @@ export async function storeData(key, value) {
   }
 }
 
+
 export const chars = (
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=');
+
 
 export const Base64 = {
   btoa: (input = '')  => {
@@ -57,74 +62,58 @@ export const Base64 = {
   }
 };
 
-export async function retrieveProfileConversations(page, perPage, userUid, profileUid) {
-  cachedProfiles = await AsyncStorage.getItem('profiles');
 
-  cachedProfiles = JSON.parse(cachedProfiles);
+export async function runSetupScripts() {
+  // these values will be stored at proper login/signup
 
-  let cachedProfile, cachedProfileIndex;
+  AsyncStorage.multiSet([
+    ['email_or_phone', '08012345678'], ['password', 'password'], ['active_profile_index', '0']
+  ])
 
-  // FIX THIS!!!!
-  cachedProfiles.forEach(
-    (profile, index) => {
-      if (profile.uid === profileUid) {
-        cachedProfile = profile;
-        cachedProfileIndex = index;
-      }
-    }
-  );
+  retrieveAuthToken();
 
-  cachedProfileConversations = cachedProfile.conversations;
+  retrieveUserByEmailOrPhone('08012345678', refresh=true);
 
-  if (!cachedProfileConversations) {
-    let { phone, password } = await retrieveUser(userUid);
+  retrieveProfiles(page=1, perPage=pageLimit, refresh=true);
+}
+// YCKkQ66eb4g3YZteK3CDbA 
 
-    profiles = await getProfiles(phone, password, page, perPage, userUid);
 
-    profileConversations = await getProfileConversations(
-      phone, password, page, perPage, userUid, profileUid);
-
-    cachedProfiles[cachedProfileIndex].conversations = profileConversations.your_response;
-
-    AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
-    
-    return profileConversations.your_response;
-  }
-
-  return cachedProfileConversations
+export async function runRefreshes() {
+  retrieveProfiles(page=1, perPage=pageLimit, refresh=true);
 }
 
-export async function retrieveConversationMessages(
-    page, perPage, profileUid, conversationUid) {
 
-}
+export function normalizeDate(eventIsoDate) {
+  eventIsoDate = `${eventIsoDate}Z`
 
-export async function retrieveUser(userUid) {
-  cached = await AsyncStorage.getItem('user');
+  currentDateTimestamp = new Date().valueOf()
+  eventDateTimestamp = Date.parse(eventIsoDate).valueOf()
+  
+  diff = (currentDateTimestamp - eventDateTimestamp) / 1000
 
-  if (!cached) {
-    user = await getUser(userUid);
-
-    await AsyncStorage.setItem('user', JSON.stringify(user.your_response));
-
-    return JSON.parse(user.your_response);
+  timeUnitsMap = {
+    1: 'Seconds',
+    60: 'Minutes', 
+    3600: 'Hours', 
+    84600: 'Days',
+    604800: 'Weeks',
+    7257600: 'Months'
   }
 
-  return JSON.parse(cached);
-}
+  applicableUnits = Object.keys(timeUnitsMap).filter((value, index, array) => {
+    return diff / value > 1
+  });
 
-export async function retrieveProfiles(page, perPage, userUid) {
-  cached = await AsyncStorage.getItem('profiles');
+  applicableUnits.reverse();
 
-  if (!cached) {
-    let { phone, password } = await retrieveUser(userUid);
+  time_ = Math.floor(diff / applicableUnits[0])
+  unit_ = timeUnitsMap[applicableUnits[0]]
 
-    userProfiles = await getProfiles(phone, password, page, perPage, userUid);
-
-    await AsyncStorage.setItem('profiles', JSON.stringify(userProfiles.your_response));
-
-    return userProfiles.your_response;
+  if (time_) {
+    return [time_, unit_]
   }
 
-  return JSON.parse(cached);
+  return ['', ' ']
+  
 }
