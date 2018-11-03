@@ -30,11 +30,29 @@ class HeaderRight extends React.Component {
         
         <Ionicons name='ios-chatbubbles' size={22} style={{marginRight: 15}} onPress={() => console.log('YAGA')}/>
         <Ionicons name='md-create' size={22} style={{marginRight: 15}} onPress={
-            () => {
-              this.props.navigation.navigate(
-                'EditContact', {'conversation': this.props.navigation.state.params.conversation}
-              )
-             }
+            () => (
+              AsyncStorage.multiGet(['user', 'profiles'], (errs, result) => {
+                if (!errs) {
+                  contact = null
+                  profiles = JSON.parse(result[1][1])
+                  user = JSON.parse(result[0][1])
+
+                  this.conversation = this.props.navigation.state.params.conversation
+                  
+                  otherParticipants = this.conversation.participants.filter(
+                    (value, index, array) => (value.user.uid !== user.uid)
+                  )
+          
+                  userParticipant = this.conversation.participants.filter(
+                    (value, index, array) => (value.user.uid === user.uid)
+                  )[0]
+          
+                  this.props.navigation.navigate(
+                    'EditContact', {'contact': userParticipant.contact, 'profile': userParticipant.profile, 'profiles': profiles, 'user': user}
+                  )
+                }
+              })
+            )
           }/>
       </View>
     )
@@ -82,12 +100,13 @@ export class ChatScreen extends React.Component {
   }
   
   static navigationOptions = ({ navigation }) => {
+    selectedProfile = SyncStorage.get('selected_profile')
 
     return {
       title: `${navigation.state.params.title}`,
       headerRight: <HeaderRight navigation={navigation}/>,
       headerStyle: {
-        backgroundColor: this.selectedProfile.theme_color,
+        backgroundColor: selectedProfile.theme_color,
       },
     }
   };
@@ -141,13 +160,13 @@ export class ChatScreen extends React.Component {
 
     this.selectedProfile = SyncStorage.get('selected_profile') || {}
 
-    if (this.state.conversation.category.name === 'Private Conversation') {
-      // this.displayContactConversations.bind(this)(refresh=false);
+    // if (this.state.conversation.category.name === 'Private Conversation') {
+    //   // this.displayContactConversations.bind(this)(refresh=false);
      
-      // TODO fix bug
-      // timer.setInterval( 
-      //   'displayContactConversations', this.displayContactConversations.bind(this), 1000);
-    }
+    //   // TODO fix bug
+    //   // timer.setInterval( 
+    //   //   'displayContactConversations', this.displayContactConversations.bind(this), 1000);
+    // }
   }
 
   componentWillUnmount() {

@@ -1,9 +1,10 @@
 import { AsyncStorage } from 'react-native';
 import { pageLimit } from '../constants';
 import { addUserToProfile, createProfile, createProfileConversation, 
-  getContactConversations, getConversationMessages, getNotifications, 
+  editProfile, getContactConversations, getConversationMessages, getNotifications, 
   getProfiles, getProfileContacts, getProfileConversations, getUser, 
-  getUserByEmailOrPhone, login, sendTextMessage, updateContactDetails } from './wrapper';
+  getUserByEmailOrPhone, login, retrieveProfileMoments, 
+  sendTextMessage, updateContactDetails, retrieveProfileTopics } from './wrapper';
 
 
 export async function getCachedProfileForIndex(profileIndex) {
@@ -140,6 +141,17 @@ export async function retrieveProfiles(page=1, perPage=pageLimit, refresh=false)
   return JSON.parse(cached);
 }
 
+export async function doEditProfile(profileUid, name, description, inviteCode, themeColor) {
+  authToken = await retrieveAuthToken();
+
+  user = JSON.parse(await AsyncStorage.getItem('user'));
+
+  userProfile = await editProfile(authToken, user.uid, profileUid, name, description, inviteCode, themeColor);
+
+  retrieveProfiles(refresh=true)
+
+  return userProfile.your_response;
+}
 
 export async function retrieveAuthToken() {
   result = await AsyncStorage.multiGet(['auth_token', 'auth_token_expiry']);
@@ -187,8 +199,6 @@ export async function retrieveUserByEmailOrPhone(emailOrPhone, refresh=false) {
     authToken = await retrieveAuthToken();
 
     userDetails = await getUserByEmailOrPhone(authToken, emailOrPhone);
- 
-    console.log('USER DETAILS', userDetails);
 
     await AsyncStorage.setItem('user', JSON.stringify(userDetails.your_response));
 
@@ -249,11 +259,6 @@ export async function retrieveNotifications(page=1, perPage=pageLimit, refresh=f
   }
 
   return JSON.parse(cached);
-}
-
-
-export async function retrieveProfileMoments(page, perPage, cachedProfileIndex, refresh) {
-  return []
 }
 
 export async function retrieveContactConversations(page, perPage, cachedProfileIndex, contactUid, refresh) {
@@ -397,8 +402,91 @@ export async function doUpdateContactDetails(profileUid, contactUid, payload) {
   user = JSON.parse(result);
 
   contactDetails = await updateContactDetails(authToken, user.uid, profileUid, contactUid, payload);
-
-  console.log(contactDetails.your_response)
   
   return contactDetails.your_response;
+}
+
+
+export async function doRetrieveProfileTopics(page, perPage, cachedProfileIndex, refresh) {
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
+
+  user = JSON.parse(result[0][1]);
+  cachedTopics = JSON.parse(result[1][1]);
+
+  cachedTopics.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
+
+  cachedProfileTopics = cachedProfile.topics;
+  userUid = user.uid;
+  profileUid = cachedProfile.uid;  
+
+  if (!cachedProfileTopics || refresh) {
+    authToken = await retrieveAuthToken();
+
+    profileTopics = await retrieveProfileTopics(
+      authToken=authToken, userUid=userUid, 
+      profileUid=profileUid, page=page, perPage=perPage);
+
+    cachedProfiles[cachedProfileIndex].moments = profileTopics.your_response;
+
+    AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
+    
+    return profileTopics.your_response;
+  }
+
+  return cachedProfileTopics
+}
+
+
+export async function doRetrieveProfileMoments(page, perPage, cachedProfileIndex, refresh) {
+  result = await AsyncStorage.multiGet(['user', 'profiles']);
+
+  user = JSON.parse(result[0][1]);
+  cachedProfiles = JSON.parse(result[1][1]);
+
+  cachedProfiles.forEach(
+    (profile, index) => {
+      if (index === cachedProfileIndex) {
+        cachedProfile = profile
+      }
+    }
+  );
+
+  cachedProfileMoments = cachedProfile.moments;
+  userUid = user.uid;
+  profileUid = cachedProfile.uid;  
+
+  if (!cachedProfileMoments || refresh) {
+    authToken = await retrieveAuthToken();
+
+    profileMoments = await retrieveProfileMoments(page, perPage, authToken, userUid, profileUid);
+
+    cachedProfiles[cachedProfileIndex].moments = profileMoments.your_response;
+
+    AsyncStorage.setItem('profiles', JSON.stringify(cachedProfiles));
+    
+    return profileMoments.your_response;
+  }
+
+  return cachedProfileMoments
+}
+
+
+export async function doCreateMoment() {
+
+}
+
+
+export async function doEditMoment() {
+
+}
+
+
+export async function doDeleteMoment() {
+  
 }

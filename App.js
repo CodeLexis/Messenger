@@ -2,7 +2,7 @@ import React from 'react';
 import SyncStorage from 'sync-storage';
 import { createDrawerNavigator, NavigationActions, DrawerItems } from 'react-navigation';
 import { AppNavigator } from './screens';
-import { AsyncStorage, FlatList, Image, Text, TouchableHighlight, 
+import { AsyncStorage, Button, FlatList, Image, Text, TouchableHighlight, 
   TouchableNativeFeedback, View } from "react-native";
 import { colors, iconSize } from './constants';
 import { Ionicons } from "react-native-vector-icons";
@@ -15,7 +15,7 @@ var styles = require('./styles.js');
 selected = [];
 
 // TODO remove this in production
-runSetupScripts();
+// runSetupScripts();
 
 // always on
 runRefreshes();
@@ -200,13 +200,13 @@ class CustomDrawerContentComponent extends React.Component {
     this.setState((state) => {
       //create new Map object, maintaining state immutability
       const selected = new Map(state.selected);
-      //remove key if selected, add key if not selected
+      //remove key if selected, add key if is not selected
       this.state.selected.has(key) ? selected.delete(key, !selected.get(key)) : selected.set(key, !selected.get(key));
       return {selected};
     });
   }
 
-  componentDidMount() {
+  componentDidMount() {    
     AsyncStorage.getItem('user').then(
       function(result) {
         result = JSON.parse(result);
@@ -219,11 +219,22 @@ class CustomDrawerContentComponent extends React.Component {
       }.bind(this)
     );
 
-    retrieveProfiles(
-      page=1, perPage=20, refresh=false
+    retrieveProfiles( 
+      page=1, perPage=20, refresh=true
     ).then(
       function(result) {
         this.setState({profiles: result})
+      }.bind(this)
+    )
+  }
+
+  refresh() {
+    this.setState({isDisplayed: false})
+    retrieveProfiles( 
+      page=1, perPage=20, refresh=true
+    ).then(
+      function(result) {
+        this.setState({profiles: result, isDisplayed: true})
       }.bind(this)
     )
   }
@@ -235,7 +246,7 @@ class CustomDrawerContentComponent extends React.Component {
         <View style={[styles.container]}>
           <Image style={{height:'30%'}} source={{uri: this.state.user.profile_photo}}/>
 
-          {/* <BasicFlatList data={this.state.profiles} navigation={this.props.navigation}/> */}
+          {/* <BasicFlatList data={this.state.profiles} navigation={this.props.navigation}/>  */}
           
           <FlatList extraData={this.state} data={this.state.profiles} keyExtractor={(item, index) => item.uid} renderItem={
             ({item}) => <CustomDrawerButton item={item}
@@ -248,6 +259,7 @@ class CustomDrawerContentComponent extends React.Component {
           }/>
           
           <CustomDrawerButton navigation={this.props.navigation} isCreateProfileButton={true} screenIndex={0}/>
+          <Button title='Refresh' onPress={this.refresh.bind(this)}/>
 
         </View>
       )

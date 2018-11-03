@@ -7,9 +7,22 @@ var styles = require('../styles.js');
 
 export default class NotificationStrip extends React.Component {
   showEntityDetails() {
+    switch(this.props.item.entities[0].entity_type.name) {
+      case 'User':
+        screenName = 'EditContact'
+        break
+    }
+
+    allProfileContacts = this.props.item.entities[0].entity.profiles[0].contacts;
+    contact = allProfileContacts.filter((value, index) => (value.user.uid === this.props.item.entities[0].entity.uid))[0]
+
     this.props.navigation.navigate(
-      this.props.item.entities[0].entity_type.name, 
-      {'uid': this.props.item.entities[0].entity.uid}
+      screenName, 
+      {
+        previousScreen: 'Notifications', 
+        contact: contact, 
+        ...this.props.item.entities[0].entity
+      }
     )
 
     // this.props.navigation.navigate('User', {'uid': this.props.item.entities[0].entity.uid})

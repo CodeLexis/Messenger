@@ -468,3 +468,158 @@ export async function updateContactDetails(authToken, userUid, profileUid, conta
     console.log(error);
   }
 }
+
+
+export async function retrieveProfileTopics(authToken, userUid, profileUid, page=1, perPage=20) {
+  try {
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}/topics`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': `Basic ${Base64.btoa(authToken + ':')}`
+        },
+        params: {
+          'page': page,
+          'per_page': perPage
+        }
+      });
+
+    return response.json();
+  }
+
+  catch (error) { 
+    console.log(error);
+  }
+}
+
+
+export async function retrieveProfileMoments(page=1, perPage=20, authToken, userUid, profileUid) {
+  try {
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}/moments`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': `Basic ${Base64.btoa(authToken + ':')}`
+        },
+        params: {'page': page, 'per_page': perPage}
+      });
+
+    return response.json();
+  }
+
+  catch (error) { 
+    console.log(error);
+  }
+}
+
+
+export async function addProfileMoment(authToken, userUid, profileUid, body, momentTypeUid, title=null, imageUid=null, videoUid=null, momentItemUid=null) {
+  try {
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}/moments`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': `Basic ${Base64.btoa(authToken + ':')}`
+        },
+        body: JSON.stringify({
+          title: title,
+          body: body,
+          image_uid: imageUid,
+          video_uid: videoUid, 
+          moment_item_uid: momentItemUid,
+          moment_type_uid: momentTypeUid
+        })
+      });
+
+    return response.json();
+  }
+
+  catch (error) { 
+    console.log(error);
+  }
+}
+
+
+export async function editProfileMoment(authToken, userUid, profileUid, momentUid, title=null, body=null) {
+  try {
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}/moments/${momentUid}`, {
+        method: 'PATCH',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': `Basic ${Base64.btoa(authToken + ':')}`
+        },
+        body: JSON.stringify({
+          title: title,
+          body: body
+        })
+      });
+
+    return response.json();
+  }
+
+  catch (error) { 
+    console.log(error);
+  }
+}
+
+
+export async function deleteProfileMoment(authToken, userUid, profileUid, momentUid) {
+  try {
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}/moments/${momentUid}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': `Basic ${Base64.btoa(authToken + ':')}`
+        }
+      });
+
+    return response.json();
+  }
+
+  catch (error) { 
+    console.log(error);
+  }
+}
+
+
+export async function editProfile(authToken, userUid, profileUid, name, description, inviteCode, themeColor) {
+  try {
+    let response = await fetch(
+      `${apiUrl}/users/${userUid}/profiles/${profileUid}`, {
+        method: 'PATCH',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Authorization': `Basic ${Base64.btoa(authToken + ':')}`
+        },
+        body: JSON.stringify({
+          name: name,
+          description: description,
+          invite_code: inviteCode,
+          theme_color: themeColor
+        })
+      });
+
+    return response.json();
+  }
+
+  catch (error) { 
+    console.log(error);
+  } 
+}

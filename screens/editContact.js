@@ -28,32 +28,61 @@ export class EditContactScreen extends React.Component {
   })
 
   componentDidMount() {
-    this.conversation = this.props.navigation.state.params.conversation
-
-    AsyncStorage.multiGet(['user', 'profiles'], (errs, result) => {
-      if (!errs) {
-        contact = null
-        profiles = JSON.parse(result[1][1])
-        user = JSON.parse(result[0][1])
-        
-        otherParticipants = this.conversation.participants.filter(
-          (value, index, array) => {return value.user.uid !== user.uid}
+    switch (this.props.navigation.state.params.previousScreen) {
+      case 'Notifications':
+        this.setState(
+          {
+            isMounted: true,
+            selectedProfile: `${this.props.navigation.state.params.profile ? 
+              this.props.navigation.state.params.profile.name : this.props.navigation.state.params.profiles[0].name}`,
+            ...this.props.navigation.state.params
+          }
         )
+        break
 
-        userParticipant = this.conversation.participants.filter(
-          (value, index, array) => {return value.user.uid === user.uid}
-        )[0]
+      default:
+        this.setState(
+          {
+            isMounted: true, 
+            selectedProfile: `${this.props.navigation.state.params.profile ? 
+              this.props.navigation.state.params.profile.name : this.props.navigation.state.params.profiles[0].name}`, 
+            ...this.props.navigation.state.params
+          }
+        )
+    }
 
-        this.setState({
-          contact: userParticipant.contact,
-          profile: userParticipant.profile,
-          isMounted: true,
-          profiles: profiles,
-          user: user,
-          selectedProfile: profiles[0].name
-        })
-      }
-    })
+    // this.conversation = this.props.navigation.state.params.conversation
+    AsyncStorage.getItem('profiles').then(
+      function (result) {
+        result = JSON.parse(result)
+        this.setState({profiles: result})
+      }.bind(this)
+    )
+
+    // AsyncStorage.multiGet(['user', 'profiles'], (errs, result) => {
+    //   if (!errs) {
+    //     contact = null
+    //     profiles = JSON.parse(result[1][1])
+    //     user = JSON.parse(result[0][1])
+        
+    //     otherParticipants = this.conversation.participants.filter(
+    //       (value, index, array) => (value.user.uid !== user.uid)
+    //     )
+
+    //     userParticipant = this.conversation.participants.filter(
+    //       (value, index, array) => (value.user.uid === user.uid)
+    //     )[0]
+
+    //     this.setState({
+    //       contact: userParticipant.contact,
+    //       profile: userParticipant.profile,
+    //       isMounted: true,
+    //       profiles: profiles,
+    //       user: user,
+    //       selectedProfile: userParticipant.profile.name
+    //     })
+    //   }
+    // })
   }
 
   saveNewDetails() {

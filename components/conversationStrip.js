@@ -48,7 +48,7 @@ export default class ConversationStrip extends React.Component {
 
     //   lastMessageTime = `${lastMessageTimeNormalized[0]}${lastMessageTimeNormalized[1].toLowerCase()[0]} ago`
     // }
-    // catch (error) {
+    // catch (error)  {
     //   console.log(conversation.messages[0])
 
     //   lastMessageText = `Say hello to ${conversation.participants[0].name}`

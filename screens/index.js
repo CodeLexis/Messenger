@@ -2,6 +2,7 @@ import React from 'react';
 import { createStackNavigator } from 'react-navigation';
 import { colors } from '../constants';
 import { HomeNavigator } from './home';
+import { AddMomentScreen } from './addMoment';
 import { AddProfileScreen } from './addProfile';
 import { AddUserScreen } from './addUser';
 import { ChatScreen } from './chat';
@@ -14,6 +15,7 @@ const AppNavigator_ = createStackNavigator(
   {
     Home: HomeNavigator,
     Chat: ChatScreen,
+    AddMoment: AddMomentScreen,
     AddProfile: AddProfileScreen,
     AddUser: AddUserScreen,
     Notifications: NotificationsScreen,

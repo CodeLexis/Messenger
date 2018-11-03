@@ -1,5 +1,5 @@
 import React from 'react';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from 'react-native-vector-icons';
 import { AsyncStorage, FlatList, Modal, Text, View } from 'react-native';
 import ActionButton from 'react-native-action-button';
 import timer from 'react-native-timer';
@@ -241,12 +241,12 @@ export class ConversationsScreen extends React.Component {
     if (this.state.profile.allows_edit) {
       addButton = <ActionButton buttonColor={this.state.profile.theme_color}>
         
-          <ActionButton.Item buttonColor='#9b59b6' title="From Contacts" onPress={() => console.log("notes tapped!")}>
-            <Icon size={22} name="md-contacts" style={styles.actionButtonIcon} />
+          <ActionButton.Item buttonColor={this.state.profile.theme_color} title="From Contacts" onPress={() => console.log("notes tapped!")}>
+            <Ionicons size={20} name="md-contacts" style={styles.actionButtonIcon} />
           </ActionButton.Item> 
 
-          <ActionButton.Item buttonColor='#3498db' title="Name" onPress={() => navigate('AddUser')}>
-            <Icon size={22} name="ios-barcode" style={styles.actionButtonIcon} />
+          <ActionButton.Item buttonColor={this.state.profile.theme_color} title="Name" onPress={() => navigate('AddUser')}>
+            <Ionicons size={20} name="ios-barcode" style={styles.actionButtonIcon} />
           </ActionButton.Item>
         
         </ActionButton>

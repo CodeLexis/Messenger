@@ -99,9 +99,9 @@ export class HomeNavigator extends React.Component {
       ),
       headerRight: (
         <View style={styles.rowContainer}>
-          <Ionicons name='ios-qr-scanner' size={iconSize} style={{marginRight: 15}} 
+          <Ionicons name='md-qr-scanner' size={iconSize} style={{marginRight: 15}} 
             onPress={() => navigation.push('Profile Information')}/>
-          <Ionicons name='ios-notifications' size={iconSize} style={{marginRight: 15}} 
+          <Ionicons name='md-notifications' size={iconSize} style={{marginRight: 15}} 
             onPress={() => navigation.push('Notifications')}/>
         </View>
       ),

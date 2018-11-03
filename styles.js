@@ -91,6 +91,26 @@ module.exports = StyleSheet.create({
     padding: 5,
     height: '10%'
   },
+  momentItemIcon: {
+    height: 50,
+    width: 50,
+    margin: 2
+  },
+  momentImage: {
+    height: 300
+  },
+  momentText: {
+    
+  },
+  momentTile: {
+    backgroundColor: 'white',
+    marginTop: 10,
+    paddingBottom: 10,
+    alignContent: 'space-between'
+  },
+  momentType: {
+    color: '#9090aa'
+  },
   noContentContainer: {
     alignItems: 'center',
     flex: 1,
@@ -192,15 +212,27 @@ module.exports = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 24
   },
+  topicImage: {
+    height: 250,
+    width: '100%'
+  },
+  topicTile: {
+    paddingTop: '5%'
+  },
   username: {
     fontWeight: 'bold',
     alignSelf: 'center',
-    // marginTop: 10,r
+    // marginTop: 10,r 
     marginLeft: 10
   },
   usernameBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap'
+    alignItems: 'center',
+    alignContent: 'space-between',
+    backgroundColor: '#ffffff',
+    flexDirection:'row',
+    flexWrap:'wrap',
+    padding: 5,
+    marginTop: 1
   },
   usernameSub: {
     fontWeight: 'normal',
